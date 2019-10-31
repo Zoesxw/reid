@@ -18,7 +18,10 @@ def eval_rank(distmat, q_pids, g_pids):
         tmp_cmc = n_cmc.cumsum()
         tmp_cmc = [x / (i + 1.) for i, x in enumerate(tmp_cmc)]
         tmp_cmc = np.asarray(tmp_cmc) * n_cmc
-        AP = tmp_cmc.sum() / num_rel
+        if num_rel != 0:
+            AP = tmp_cmc.sum() / num_rel
+        else:
+            AP = 0
         all_AP.append(AP)
 
     rank1 = np.mean(all_cmc)
