@@ -19,6 +19,11 @@ def init_parser():
                         help='manual epoch number (useful when restart)')
     parser.add_argument('--max-epoch', type=int, default=60,
                         help='maximum epochs to run')
+                        
+    parser.add_argument('--fixbase-epoch', type=int, default=5,
+                        help='number of epochs to fix base layers')
+    parser.add_argument('--open-layers', type=str, nargs='+', default=['classifier'],
+                        help='open specified layers for training while keeping others frozen')
 
     parser.add_argument('--lr-scheduler', type=str, default='multi_step',
                         help='learning rate scheduler (see lr_schedulers.py)')
@@ -36,6 +41,8 @@ def init_parser():
     # ************************************************************
     # Test settings
     # ************************************************************
+    parser.add_argument('--no-pretrained', action='store_true',
+                        help='do not load pretrained weights')
     parser.add_argument('--load-weights', type=str, default='',
                         help='load pretrained weights but ignore layers that do not match in size')
     parser.add_argument('--evaluate', action='store_true',

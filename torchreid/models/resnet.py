@@ -1,6 +1,15 @@
 __all__ = ['resnet50', 'resnet50_fc512']
 
 from torch import nn
+import torch.utils.model_zoo as model_zoo
+
+model_urls = {
+    'resnet18': 'https://download.pytorch.org/models/resnet18-5c106cde.pth',
+    'resnet34': 'https://download.pytorch.org/models/resnet34-333f7ec4.pth',
+    'resnet50': 'https://download.pytorch.org/models/resnet50-19c8e357.pth',
+    'resnet101': 'https://download.pytorch.org/models/resnet101-5d3b4d8f.pth',
+    'resnet152': 'https://download.pytorch.org/models/resnet152-b121ed2d.pth',
+}
 
 
 class Bottleneck(nn.Module):
@@ -163,11 +172,27 @@ class ResNet(nn.Module):
         return y
 
 
-def resnet50(num_classes, bias, bnneck):
+def init_pretrained_weights(model, model_url):
+    """Initializes model with pretrained weights.
+
+    Layers that don't match with pretrained layers in name or size are kept unchanged.
+    """
+    pretrain_dict = model_zoo.load_url(model_url)
+    model_dict = model.state_dict()
+    pretrain_dict = {k: v for k, v in pretrain_dict.items() if k in model_dict and model_dict[k].size() == v.size()}
+    model_dict.update(pretrain_dict)
+    model.load_state_dict(model_dict)
+
+
+def resnet50(num_classes, bias, bnneck, pretrained=True):
     model = ResNet(num_classes, Bottleneck, [3, 4, 6, 3], bias, bnneck, fc_dims=None, dropout_p=None)
+    if pretrained:
+        init_pretrained_weights(model, model_urls['resnet50'])
     return model
 
 
-def resnet50_fc512(num_classes, bias, bnneck):
+def resnet50_fc512(num_classes, bias, bnneck, pretrained=True):
     model = ResNet(num_classes, Bottleneck, [3, 4, 6, 3], bias, bnneck, fc_dims=[512], dropout_p=None)
+    if pretrained:
+        init_pretrained_weights(model, model_urls['resnet50'])
     return model

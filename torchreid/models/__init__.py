@@ -7,7 +7,7 @@ __model_factory = {
 }
 
 
-def build_model(name, num_classes, bias, bnneck):
+def build_model(name, num_classes, bias, bnneck, pretrained=True):
     """A function wrapper for building a model.
     Args:
         name (str): model name.
@@ -20,4 +20,5 @@ def build_model(name, num_classes, bias, bnneck):
     avai_models = list(__model_factory.keys())
     if name not in avai_models:
         raise KeyError('Unknown model: {}. Must be one of {}'.format(name, avai_models))
-    return __model_factory[name](num_classes, bias, bnneck)
+    return __model_factory[name](num_classes, bias, bnneck, pretrained=pretrained)
+ 

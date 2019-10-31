@@ -15,7 +15,7 @@ from torchreid.optim import build_lr_scheduler
 from torchreid.utils.avgmeter import AverageMeter
 from torchreid.utils.loggers import Logger
 from torchreid.utils.tools import set_random_seed, check_isfile
-from torchreid.utils.torchtools import load_pretrained_weights, save_checkpoint
+from torchreid.utils.torchtools import load_pretrained_weights, save_checkpoint, open_all_layers, open_specified_layers
 
 parser = init_parser()
 args = parser.parse_args()
@@ -39,7 +39,7 @@ def main():
     trainloader, queryloader, galleryloader = datamanager.return_dataloaders()
 
     print('Building model: {}'.format(args.arch))
-    model = build_model(args.arch, 4768, args.bias, args.bnneck)
+    model = build_model(args.arch, 4768, args.bias, args.bnneck, pretrained=(not args.no_pretrained))
 
     if args.load_weights and check_isfile(args.load_weights):
         load_pretrained_weights(model, args.load_weights)
@@ -72,6 +72,11 @@ def train(epoch, model, criterion, optimizer, trainloader):
     batch_time = AverageMeter()
     data_time = AverageMeter()
     model.train()
+    if (epoch + 1) <= args.fixbase_epoch and args.open_layers is not None:
+        print('* Only train {} (epoch: {}/{})'.format(args.open_layers, epoch + 1, args.fixbase_epoch))
+        open_specified_layers(model, args.open_layers)
+    else:
+        open_all_layers(model)
     end = time.time()
     for batch_idx, (imgs, pids) in enumerate(trainloader):
         data_time.update(time.time() - end)
