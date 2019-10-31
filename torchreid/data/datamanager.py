@@ -10,7 +10,7 @@ class ImageDataManager(object):
 
         transform_tr, transform_te = build_transforms()
         self.trainloader = torch.utils.data.DataLoader(
-            ImageDataset('train_v_list.txt', transform=transform_tr),
+            ImageDataset('train_v_list.txt', transform=transform_tr, relabel=True),
             batch_size=batch_size,
             shuffle=True,
             num_workers=4,

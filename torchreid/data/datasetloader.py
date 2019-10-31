@@ -7,11 +7,19 @@ from torchreid.utils.tools import read_image
 
 # train val
 class ImageDataset(Dataset):
-    def __init__(self, label, transform=None):
+    def __init__(self, label, transform=None, relabel=False):
         self.root = '../naicdata'
         list_path = os.path.join(self.root, label)
         self.img_list = [i_id.strip() for i_id in open(list_path)]
         self.transform = transform
+        self.relabel = relabel
+
+        pid_container = set()
+        for i in range(len(self.img_list)):
+            _, id = (self.img_list[i]).split()
+            pid = int(id)
+            pid_container.add(pid)
+        self.pid2label = {pid: label for label, pid in enumerate(pid_container)}
 
     def __len__(self):
         return len(self.img_list)
@@ -22,6 +30,8 @@ class ImageDataset(Dataset):
         if self.transform is not None:
             img = self.transform(img)
         pid = int(id)
+        if self.relabel:
+            pid = self.pid2label[pid]
         return img, pid
 
 
