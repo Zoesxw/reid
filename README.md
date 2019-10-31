@@ -1,16 +1,16 @@
 ## data
 路径比如:   
 `
-|— naicdata  
-|  |— test  
-|     |— gallery_a  
-|     |— query_a  
-|     |— query_a_list.txt  
-|  |— train  
-|  |— gallery_v_list.txt  
-|  |— query_v_list.txt  
-|  |— train_list.txt  
-|  |— train_v_list.txt  
+|— naicdata    
+|  |— test     
+|     |— gallery_a     
+|     |— query_a     
+|     |— query_a_list.txt     
+|  |— train     
+|  |— gallery_v_list.txt     
+|  |— query_v_list.txt     
+|  |— train_list.txt      
+|  |— train_v_list.txt     
 `
 
 ## train+val
