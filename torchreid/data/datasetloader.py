@@ -5,6 +5,7 @@ from torch.utils.data import Dataset
 from torchreid.utils.tools import read_image
 
 
+# train val
 class ImageDataset(Dataset):
     def __init__(self, label, transform=None):
         self.root = '../naicdata'
@@ -24,9 +25,10 @@ class ImageDataset(Dataset):
         return img, pid
 
 
-class QueryDataset(Dataset):
+# test
+class TestQueryDataset(Dataset):
     def __init__(self, transform=None):
-        self.root = '../naicdata'
+        self.root = '../naicdata/test'
         list_path = os.path.join(self.root, 'query_a_list.txt')
         self.img_list = [i_id.strip() for i_id in open(list_path)]
         self.transform = transform
@@ -43,9 +45,9 @@ class QueryDataset(Dataset):
         return img, img_name
 
 
-class GalleryDataset(Dataset):
+class TestGalleryDataset(Dataset):
     def __init__(self, transform=None):
-        self.img_paths = glob.glob(os.path.join('../naicdata', 'gallery_a', '*.png'))
+        self.img_paths = glob.glob(os.path.join('../naicdata/test', 'gallery_a', '*.png'))
         self.transform = transform
 
     def __len__(self):

@@ -3,12 +3,14 @@ import os
 import os.path as osp
 import time
 import datetime
+import numpy as np
 import torch
+from torch.nn import functional as F
 
 from default_parser import init_parser
 from torchreid.data import ImageDataManager
 from torchreid.losses import CrossEntropyLoss
-from torchreid.metrics import accuracy
+from torchreid.metrics import accuracy, compute_distance_matrix, eval_rank
 from torchreid.models import build_model
 from torchreid.optim import build_lr_scheduler
 
@@ -39,14 +41,18 @@ def main():
     trainloader, queryloader, galleryloader = datamanager.return_dataloaders()
 
     print('Building model: {}'.format(args.arch))
-    model = build_model(args.arch, 4768, args.bias, args.bnneck, pretrained=(not args.no_pretrained))
+    model = build_model(args.arch, 4000, args.bias, args.bnneck, pretrained=(not args.no_pretrained))
 
     if args.load_weights and check_isfile(args.load_weights):
         load_pretrained_weights(model, args.load_weights)
 
     model.cuda()
 
-    criterion = CrossEntropyLoss(4768)
+    if args.evaluate:
+        evaluate(model, queryloader, galleryloader, args.dist_metric, args.normalize_feature)
+        return
+
+    criterion = CrossEntropyLoss(4000)
     optimizer = torch.optim.Adam(model.parameters(), lr=0.0003, weight_decay=5e-04, betas=(0.9, 0.999))
     scheduler = build_lr_scheduler(optimizer, args.lr_scheduler, args.stepsize)
 
@@ -61,6 +67,7 @@ def main():
                 'epoch': epoch + 1,
                 'optimizer': optimizer.state_dict(),
             }, args.save_dir)
+            evaluate(model, queryloader, galleryloader, args.dist_metric, args.normalize_feature)
     elapsed = round(time.time() - time_start)
     elapsed = str(datetime.timedelta(seconds=elapsed))
     print('Elapsed {}'.format(elapsed))
@@ -110,6 +117,57 @@ def train(epoch, model, criterion, optimizer, trainloader):
                 lr=optimizer.param_groups[0]['lr'],
                 eta=eta_str))
         end = time.time()
+
+
+def evaluate(model, queryloader, galleryloader, dist_metric, normalize_feature):
+    batch_time = AverageMeter()
+    model.eval()
+    with torch.no_grad():
+        print('Extracting features from query set ...')
+        qf, q_pids = [], []
+        for batch_idx, (imgs, pids) in enumerate(queryloader):
+            imgs = imgs.cuda()
+            end = time.time()
+            features = model(imgs)
+            batch_time.update(time.time() - end)
+            features = features.data.cpu()
+            qf.append(features)
+            q_pids.extend(pids)
+        qf = torch.cat(qf, 0)
+        q_pids = np.asarray(q_pids)
+        print('Done, obtained {}-by-{} matrix'.format(qf.size(0), qf.size(1)))
+
+        print('Extracting features from gallery set ...')
+        gf, g_pids = [], []
+        for batch_idx, (imgs, pids) in enumerate(galleryloader):
+            imgs = imgs.cuda()
+            end = time.time()
+            features = model(imgs)
+            batch_time.update(time.time() - end)
+            features = features.data.cpu()
+            gf.append(features)
+            g_pids.extend(pids)
+        gf = torch.cat(gf, 0)
+        g_pids = np.asarray(g_pids)
+        print('Done, obtained {}-by-{} matrix'.format(gf.size(0), gf.size(1)))
+
+    print('Speed: {:.4f} sec/batch'.format(batch_time.avg))
+
+    if normalize_feature:
+        print('Normalzing features with L2 norm ...')
+        qf = F.normalize(qf, p=2, dim=1)
+        gf = F.normalize(gf, p=2, dim=1)
+
+    print('Computing distance matrix with metric={} ...'.format(dist_metric))
+    distmat = compute_distance_matrix(qf, gf, dist_metric)
+    distmat = distmat.numpy()
+
+    print('Computing rank1 and mAP ...')
+    rank1, mAP, result = eval_rank(distmat, q_pids, g_pids)
+    print('** Results **')
+    print('Rank1: {:.8f}'.format(rank1))
+    print('mAP: {:.8f}'.format(mAP))
+    print('average: {:.8f}'.format(result))
 
 
 if __name__ == '__main__':

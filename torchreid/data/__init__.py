@@ -1,1 +1,1 @@
-from .datamanager import ImageDataManager
+from .datamanager import ImageDataManager, TestImageDataManager

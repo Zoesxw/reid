@@ -21,4 +21,3 @@ def build_model(name, num_classes, bias, bnneck, pretrained=True):
     if name not in avai_models:
         raise KeyError('Unknown model: {}. Must be one of {}'.format(name, avai_models))
     return __model_factory[name](num_classes, bias, bnneck, pretrained=pretrained)
- 
